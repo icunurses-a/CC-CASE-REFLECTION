@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protected Case Study Viewer | AMER ALSHARIF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;900&family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Core Protection: Prevent text selection & dragging everywhere */
+        * {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            overflow-x: hidden;
+        }
+
+        .font-arabic {
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .font-doc {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Block Printing completely via CSS */
+        @media print {
+            body * {
+                display: none !important;
+            }
+            body::after {
+                content: "يا حراااااااااامي! الطباعة ممنوعة - AMER ALSHARIF PROTECTED DOCUMENT";
+                display: block !important;
+                font-size: 32px;
+                font-weight: bold;
+                text-align: center;
+                margin-top: 20%;
+                color: red;
+                font-family: 'Cairo', sans-serif;
+            }
+        }
+
+        /* A4 Paper Sheet Styling */
+        .a4-sheet {
+            width: 100%;
+            max-width: 820px;
+            background: #ffffff;
+            color: #1e293b;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease;
+        }
+
+        /* Subtle Repeating Diagonal Watermark Layer */
+        .watermark-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            opacity: 0.055;
+        }
+
+        .watermark-row {
+            white-space: nowrap;
+            transform: rotate(-32deg) scale(1.2);
+            font-weight: 800;
+            font-size: 1.35rem;
+            letter-spacing: 0.22em;
+            color: #0f172a;
+            text-align: center;
+            margin: 28px 0;
+        }
+
+        /* Custom Scrollbar for PDF Reader feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Funny Siren & Shake Animations */
+        @keyframes sirenFlash {
+            0%, 100% { background-color: rgba(220, 38, 38, 0.22); border-color: #ef4444; }
+            50% { background-color: rgba(37, 99, 235, 0.22); border-color: #3b82f6; }
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.75) rotate(-3deg); opacity: 0; }
+            60% { transform: scale(1.05) rotate(2deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        @keyframes wobble {
+            0%, 100% { transform: rotate(0deg); }
+            20% { transform: rotate(-12deg); }
+            40% { transform: rotate(12deg); }
+            60% { transform: rotate(-8deg); }
+            80% { transform: rotate(8deg); }
+        }
+
+        .siren-backdrop {
+            animation: sirenFlash 0.6s infinite;
+        }
+
+        .modal-bounce {
+            animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .wobble-icon {
+            display: inline-block;
+            animation: wobble 0.7s infinite;
+        }
+
+        /* Invisible deterrent shield over text to prevent drag-selecting */
+        .content-shield {
+            position: relative;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col" oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;">
+
+    <!-- Top Reader Toolbar -->
+    <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-3 sm:px-6 py-2.5 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <!-- Left: File Info & Sidebar Toggle -->
+            <div class="flex items-center gap-3">
+                <button id="toggleSidebarBtn" class="lg:hidden p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition" title="Toggle Sections">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-amber-600 flex items-center justify-center shadow-md shrink-0">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-sm sm:text-base font-bold text-white leading-tight truncate max-w-[180px] sm:max-w-xs md:max-w-md">
+                            AMER ALSHARIF CC ACTIVITY - G23.pdf
+                        </h1>
+                        <p class="text-[11px] text-slate-400">Reflective Practice Case Study • 5 Pages</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: Zoom & Page Controls -->
+            <div class="hidden sm:flex items-center gap-1.5 bg-slate-800/90 p-1 rounded-xl border border-slate-700">
+                <button id="zoomOutBtn" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-300 transition" title="Zoom Out">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+                </button>
+                <span id="zoomLabel" class="text-xs font-semibold px-2 text-slate-200 min-w-[48px] text-center">100%</span>
+                <button id="zoomInBtn" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-300 transition" title="Zoom In">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                </button>
+                <div class="h-4 w-[1px] bg-slate-700 mx-1"></div>
+                <span id="pageIndicator" class="text-xs text-slate-300 px-2 font-medium">Page 1 / 5</span>
+            </div>
+
+            <!-- Right: Protection Status, Sound Toggle & Theft Counter -->
+            <div class="flex items-center gap-2">
+                <!-- Sound Toggle -->
+                <button id="soundToggleBtn" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 transition" title="Toggle Siren Sound">
+                    <span id="soundIcon">🔊</span>
+                    <span class="hidden md:inline" id="soundText">Siren On</span>
+                </button>
+
+                <!-- Theft Attempts Counter -->
+                <div id="counterBadge" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold" title="Blocked Copy/Cut Attempts">
+                    <span>🚨</span>
+                    <span class="hidden md:inline">Attempts:</span>
+                    <span id="theftCount" class="font-bold text-amber-400">0</span>
+                </div>
+
+                <!-- Active Shield Badge -->
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span class="hidden sm:inline">Anti-Copy Shield</span>
+                    <span class="sm:hidden">Protected</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <div class="flex-1 flex max-w-7xl w-full mx-auto relative">
+
+        <!-- Sidebar Navigation (Table of Contents & Page Thumbnails) -->
+        <aside id="sidebar" class="fixed lg:sticky top-[57px] left-0 z-30 h-[calc(100vh-57px)] w-72 bg-slate-900/95 lg:bg-slate-900/60 backdrop-blur-md border-r border-slate-800 p-4 overflow-y-auto transition-transform duration-300 -translate-x-full lg:translate-x-0 shrink-0">
+            <div class="mb-4">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Document Outline</p>
+                <nav class="space-y-1">
+                    <button onclick="scrollToSection('sec-1')" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between">
+                        <span>1. Case Selection & Confidentiality</span>
+                        <span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">P1</span>
+                    </button>
+                    <button onclick="scrollToSection('sec-2')" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between">
+                        <span>2. Brief Patient Summary (ABCDE)</span>
+                        <span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">P1</span>
+                    </button>
+                    <button onclick="scrollToSection('sec-3')" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between">
+                        <span>3. Chronological Clinical Scenario</span>
+                        <span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">P1-2</span>
+                    </button>
+                    <button onclick="scrollToSection('sec-4')" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between">
+                        <span>4. Clinical Problem & Learning Focus</span>
+                        <span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">P2-3</span>
+                    </button>
+                    <button onclick="scrollToSection('sec-5')" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between">
+                        <span>5. Gibbs' Reflection Framework</span>
+                        <span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">P3-4</span>
+                    </button>
+                    <button onclick="scrollToSection('sec-6')" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between">
+                        <span>6. Evidence-Based Practice (EBP)</span>
+                        <span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">P4</span>
+                    </button>
+                    <button onclick="scrollToSection('sec-7')" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center justify-between">
+                        <span>7. Conclusion</span>
+                        <span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">P5</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Quick Page Jump -->
+            <div class="pt-4 border-t border-slate-800">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Pages</p>
+                <div class="grid grid-cols-5 gap-1.5">
+                    <button onclick="scrollToPage(1)" class="py-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-xs font-semibold text-center transition">1</button>
+                    <button onclick="scrollToPage(2)" class="py-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-xs font-semibold text-center transition">2</button>
+                    <button onclick="scrollToPage(3)" class="py-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-xs font-semibold text-center transition">3</button>
+                    <button onclick="scrollToPage(4)" class="py-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-xs font-semibold text-center transition">4</button>
+                    <button onclick="scrollToPage(5)" class="py-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-xs font-semibold text-center transition">5</button>
+                </div>
+            </div>
+
+            <!-- Security Info Card -->
+            <div class="mt-6 p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/80">
+                <div class="flex items-center gap-2 text-rose-400 font-bold text-xs mb-1.5">
+                    <span>🛡️</span>
+                    <span>Intellectual Property Notice</span>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-relaxed">
+                    Author: <strong class="text-white">AMER ALSHARIF</strong><br>
+                    Copying, cutting, printing, or scraping text from this document is actively monitored and blocked.
+                </p>
+                <button onclick="triggerHaramiAlert('Test Trap')" class="mt-3 w-full py-1.5 px-3 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-[11px] font-semibold transition">
+                    Test Protection Alarm 🚨
+                </button>
+            </div>
+        </aside>
+
+        <!-- Document Pages Viewport -->
+        <main id="docViewport" class="flex-1 p-4 sm:p-8 flex flex-col items-center gap-8 overflow-y-auto">
+            <div id="zoomContainer" class="w-full flex flex-col items-center gap-8 origin-top transition-transform duration-200">
+
+                <!-- ==================== PAGE 1 ==================== -->
+                <article id="page-1" class="a4-sheet rounded-xl p-6 sm:p-12 md:p-14 font-doc" data-page="1">
+                    <!-- Watermark Layer -->
+                    <div class="watermark-overlay" aria-hidden="true">
+                        <div class="watermark-row">AMER ALSHARIF • PROTECTED • AMER ALSHARIF • PROTECTED</div>
+                        <div class="watermark-row">PROTECTED • AMER ALSHARIF • PROTECTED • AMER ALSHARIF</div>
+                        <div class="watermark-row">AMER ALSHARIF • PROTECTED • AMER ALSHARIF • PROTECTED</div>
+                        <div class="watermark-row">PROTECTED • AMER ALSHARIF • PROTECTED • AMER ALSHARIF</div>
+                        <div class="watermark-row">AMER ALSHARIF • PROTECTED • AMER ALSHARIF • PROTECTED</div>
+                    </div>
+
+                    <div class="content-shield">
+                        <!-- Header Banner -->
+                        <div class="border-b-2 border-slate-800 pb-4 mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+                            <div>
+                                <span class="inline-block px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-800 text-xs font-bold tracking-wide uppercase mb-1.5 border border-blue-200">
+                                    Critical Care Nursing Portfolio • Group 23
+                                </span>
+                                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                                    Reflective Practice Case Study Activity
+                                </h2>
+                            </div>
+                            <div class="text-left sm:text-right">
+                                <p class="text-xs font-bold text-slate-700 uppercase tracking-wider">Prepared By</p>
+                                <p class="text-sm font-extrabold text-blue-900">AMER ALSHARIF</p>
+                            </div>
+                        </div>
+
+                        <!-- Section 1 -->
+                        <section id="sec-1" class="mb-6">
+                            <h3 class="text-lg font-bold text-blue-950 bg-slate-100 px-3 py-1.5 rounded-lg border-l-4 border-blue-700 mb-3">
+                                1. Case Selection &amp; Confidentiality
+                            </h3>
+                            <ul class="space-y-2 text-sm sm:text-[15px] leading-relaxed text-slate-800">
+                                <li><strong class="text-slate-950">Clinical Context:</strong> ICU / Neuro-Critical Care / Emergency &amp; Trauma Nursing.</li>
+                                <li><strong class="text-slate-950">Case Overview:</strong> A post-operative patient status-post decompressive craniectomy for an acute ischemic stroke (AIS) who experienced acute neurological deterioration and required urgent hemodynamic, airway/perfusion, and pharmacological management.</li>
+                                <li><strong class="text-slate-950">Ethical &amp; Confidentiality Compliance:</strong> All patient identifiers (name, hospital number, exact date of birth) have been omitted to maintain strict patient confidentiality and ethical standards.</li>
+                            </ul>
+                        </section>
+
+                        <!-- Section 2 -->
+                        <section id="sec-2" class="mb-6">
+                            <h3 class="text-lg font-bold text-blue-950 bg-slate-100 px-3 py-1.5 rounded-lg border-l-4 border-blue-700 mb-3">
+                                2. Brief Patient Summary
+                            </h3>
+                            <ul class="space-y-2 text-sm sm:text-[15px] leading-relaxed text-slate-800 mb-4">
+                                <li><strong class="text-slate-950">Demographics:</strong> 59-year-old male.</li>
+                                <li><strong class="text-slate-950">Medical Diagnosis:</strong> Acute Ischemic Stroke (AIS) post-decompressive craniectomy.</li>
+                                <li><strong class="text-slate-950">Chief Complaint / Acute Event:</strong> Sudden decrease in level of consciousness (LOC), left-sided hemiplegia, facial droop, and dysarthria occurring post-operatively while under critical care monitoring.</li>
+                                <li><strong class="text-slate-950">Mode of Arrival:</strong> Via Ambulance to ER, then transferred to the Neuro-ICU via emergency surgical bed following urgent decompressive craniectomy after emergency department stabilization and neuroimaging.</li>
+                            </ul>
+
+                            <!-- Vital Signs Box -->
+                            <div class="bg-rose-50/70 border border-rose-200 rounded-xl p-3.5 mb-4">
+                                <p class="text-xs font-bold uppercase tracking-wider text-rose-900 mb-2">Initial Vital Signs (at acute neurological change)</p>
+                                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs sm:text-sm">
+                                    <div class="bg-white p-2 rounded-lg border border-rose-100">
+                                        <span class="text-slate-500 block text-[11px]">BP</span>
+                                        <strong class="text-rose-700">178/96 mmHg</strong>
+                                    </div>
+                                    <div class="bg-white p-2 rounded-lg border border-rose-100">
+                                        <span class="text-slate-500 block text-[11px]">HR</span>
+                                        <strong class="text-slate-900">62 bpm</strong>
+                                    </div>
+                                    <div class="bg-white p-2 rounded-lg border border-rose-100">
+                                        <span class="text-slate-500 block text-[11px]">RR</span>
+                                        <strong class="text-slate-900">18 breaths/min</strong>
+                                    </div>
+                                    <div class="bg-white p-2 rounded-lg border border-rose-100">
+                                        <span class="text-slate-500 block text-[11px]">SpO₂</span>
+                                        <strong class="text-slate-900">98% (2L NC)</strong>
+                                    </div>
+                                    <div class="bg-white p-2 rounded-lg border border-rose-100 col-span-2 sm:col-span-1">
+                                        <span class="text-slate-500 block text-[11px]">Temp</span>
+                                        <strong class="text-slate-900">37.8 °C</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ABCDE Findings -->
+                            <p class="text-sm font-bold text-slate-900 mb-2">Primary Survey Findings (ABCDE):</p>
+                            <div class="space-y-2 text-sm leading-relaxed text-slate-800 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <p><strong class="text-blue-900">A (Airway):</strong> Patent, maintained independently with intact gag/cough reflex, though at risk due to declining consciousness and post-stroke dysphagia.</p>
+                                <p><strong class="text-blue-900">B (Breathing):</strong> Spontaneous, unlabored respirations at 18/min; bilateral equal chest expansion; clear lung sounds; SpO₂ 98% on low-flow oxygen.</p>
+                                <p><strong class="text-blue-900">C (Circulation):</strong> Hemodynamically hypertensive (178/96 mmHg) with borderline bradycardia (62 bpm — early warning sign of rising intracranial pressure / Cushing's response); peripheral pulses strong and regular; two large-bore IV cannulas patent.</p>
+                                <p><strong class="text-blue-900">D (Disability):</strong> GCS 10/15 (E3, V2, M5); pupils unequal and sluggishly reactive (Right 3.5 mm, Left 3 mm); left-sided motor deficit (0/5 strength in left upper and lower extremities); blood glucose 132 mg/dL.</p>
+                                <p><strong class="text-blue-900">E (Exposure):</strong> Decompressive craniectomy surgical dressing clean, dry, and intact; subgaleal surgical drain in place draining serosanguinous fluid; no external bleeding or skin breakdown.</p>
+                            </div>
+                        </section>
+
+                        <!-- Section 3 Start -->
+                        <section id="sec-3">
+                            <h3 class="text-lg font-bold text-blue-950 bg-slate-100 px-3 py-1.5 rounded-lg border-l-4 border-blue-700 mb-3">
+                                3. Chronological Clinical Scenario (Mini Clinical Narrative)
+                            </h3>
+                            <div class="text-sm sm:text-[15px] leading-relaxed text-slate-800">
+                                <p><strong class="text-slate-950">08:00 — Baseline Assessment:</strong> Assumed care of the 59-year-old male in the critical care unit following decompressive craniectomy for a massive middle cerebral artery (MCA) ischemic stroke. The patient was initially drowsy but arousable (GCS 13/15), hemodynamically stable, and receiving scheduled intravenous antimicrobial and antipyretic therapy.</p>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Page Footer -->
+                    <div class="mt-8 pt-3 border-t border-slate-200 flex justify-between items-center text-[11px] text-slate-400">
+                        <span>AMER ALSHARIF • Reflective Practice Case Study</span>
+                        <span>Page 1 of 5</span>
+                    </div>
+                </article>
+
+                <!-- ==================== PAGE 2 ==================== -->
+                <article id="page-2" class="a4-sheet rounded-xl p-6 sm:p-12 md:p-14 font-doc" data-page="2">
+                    <div class="watermark-overlay" aria-hidden="true">
+                        <div class="watermark-row">AMER ALSHARIF • PROTECTED • AMER ALSHARIF • PROTECTED</div>
+                        <div class="watermark-row">PROTECTED • AMER ALSHARIF • PROTECTED • AMER ALSHARIF</div>
+                        <div class="watermark-row">AMER ALSHARIF • PROTECTED • AMER ALSHARIF • PROTECTED</div>
+                        <div class="watermark-row">PROTECTED • AMER ALSHARIF • PROTECTED • AMER ALSHARIF</div>
+                    </div>
+
+                    <div class="content-shield">
+                        <!-- Continuation of Section 3 -->
+                        <section class="mb-7 space-y-3.5 text-sm sm:text-[15px] leading-relaxed text-slate-800">
+                            <div class="pl-3.5 border-l-2 border-amber-500">
+                                <p><strong class="text-slate-950">10:15 — Acute Deterioration:</strong> During hourly neurological checks, the patient became increasingly lethargic (GCS dropped to 10/15), with new-onset left facial asymmetry and sluggish pupillary light response. Systolic blood pressure rose sharply to 178 mmHg while heart rate trended down to 62 bpm.</p>
+                            </div>
+
+                            <div class="pl-3.5 border-l-2 border-blue-600">
+                                <p><strong class="text-slate-950">10:20 — Immediate Nursing Stabilization &amp; Team Escalation:</strong> Performed an immediate ABCDE reassessment, elevated the head of the bed (HOB) to 30 degrees with the head aligned in a neutral midline position to optimize cerebral venous drainage, and notified the neurosurgical and critical care medical team immediately.</p>
+                            </div>
+
+                            <div class="pl-3.5 border-l-2 border-blue-600">
+                                <p><strong class="text-slate-950">10:30 — Diagnostic &amp; Therapeutic Interventions:</strong> Accompanied the patient for an emergent non-contrast head CT and CT angiography to rule out post-craniectomy hematoma or hemorrhagic transformation. Because recent cranial surgery is an absolute contraindication to systemic thrombolysis (tPA), care focused on strict blood pressure titration (target SBP 140–180 mmHg via ordered IV antihypertensives) to preserve collateral perfusion to the ischemic penumbra without provoking surgical site bleeding.</p>
+                            </div>
+
+                            <div class="pl-3.5 border-l-2 border-indigo-600">
+                                <p class="mb-2"><strong class="text-slate-950">15:00–17:00 — Ongoing Pharmacological &amp; Neuro-Protective Management:</strong> Administered prescribed medications safely after verifying allergy status, renal/hepatic baseline labs, and swallowing safety:</p>
+                                <ul class="list-disc pl-5 space-y-1.5 text-slate-700">
+                                    <li><strong class="text-slate-900">15:00:</strong> Ceftazidime 2g IV for post-neurosurgical infection prophylaxis/treatment.</li>
+                                    <li><strong class="text-slate-900">17:00:</strong> Paracetamol 1g IV to maintain normothermia and prevent fever-induced metabolic cerebral stress, alongside Azithromycin 500mg oral/enteral after confirming safe swallowing/tube placement.</li>
+                                </ul>
+                            </div>
+
+                            <div class="pl-3.5 border-l-2 border-emerald-600 bg-emerald-50/50 py-2 pr-3 rounded-r-lg">
+                                <p><strong class="text-emerald-950">18:30 — Stabilization:</strong> Following targeted hemodynamic control, normothermia maintenance, and close neuro-monitoring, the patient's GCS stabilized at 13/15, pupils returned to equal and briskly reactive (3 mm), and follow-up imaging confirmed absence of intracranial hemorrhage.</p>
+                            </div>
+                        </section>
+
+                        <!-- Section 4 -->
+                        <section id="sec-4">
+                            <h3 class="text-lg font-bold text-blue-950 bg-slate-100 px-3 py-1.5 rounded-lg border-l-4 border-blue-700 mb-3">
+                                4. Clinical Problem &amp; Learning Focus (Challenges During Practice)
+                            </h3>
+                            <ul class="space-y-3 text-sm sm:text-[15px] leading-relaxed text-slate-800">
+                                <li>
+                                    <strong class="text-slate-950">Managing a Rapidly Deteriorating Neuro-Critical Patient:</strong> Recognizing subtle early indicators of secondary brain injury (a 3-point GCS drop paired with rising systolic blood pressure and falling heart rate) before irreversible brain herniation occurred.
+                                </li>
+                                <li>
+                                    <strong class="text-slate-950">Balancing Competing Hemodynamic Goals:</strong> Navigating the clinical challenge of maintaining sufficient cerebral perfusion pressure (CPP) to salvage ischemic brain tissue while simultaneously preventing severe hypertension that could cause life-threatening hemorrhage at the fresh craniectomy site.
+                                </li>
+                                <li>
+                                    <strong class="text-slate-950">Medication Safety in Dysphagic &amp; Post-Surgical Patients:</strong> Ensuring safe administration of both IV and oral medications (evaluating aspiration risk prior to oral Azithromycin and monitoring hepatotoxicity/nephrotoxicity thresholds) under high-acuity time constraints.
+                                </li>
+                                <li>
+                                    <strong class="text-slate-950">Communication Under Pressure:</strong> Delivering concise, structured SBAR updates to the multidisciplinary neuro-team during an acute neurological emergency.
+                                </li>
+                            </ul>
+                        </section>
+                    </div>
+
+                    <div class="mt-8 pt-3 border-t border-slate-200 flex justify-between items-center text-[11px] text-slate-400">
+                        <span>AMER ALSHARIF • Reflective Practice Case Study</span>
+                        <span>Page 2 of 5</span>
+                    </div>
+                </article>
+
+                <!-- ==================== PAGE 3 ==================== -->
+                <article id="page-3" class="a4-sheet rounded-xl p-6 sm:p-12 md:p-14 font-doc" data-page="3">
+                    <div class="watermark-overlay" aria-hidden="true">
+                        <div class="watermark-row">AMER ALSHARIF • PROTECTED • AMER ALSHARIF • PROTECTED</div>
+                        <div class="watermark-row">PROTECTED • AMER ALSHARIF • PROTECTED • AMER ALSHARIF</div>
+                        <div class="watermark-row">AMER ALSHARIF • PROTECTED • AMER ALSHARIF • PROTECTED</div>
+                        <div class="watermark-row">PROTECTED • AMER ALSHARIF • PROTECTED • AMER ALSHARIF</div>
+                    </div>
+
+                    <div class="content-shield">
+                        <!-- Continuation of Section 4: Ethical Dilemmas -->
+                        <div class="mb-7 bg-amber-50/70 border border-amber-200 rounded-xl p-4">
+                            <p class="text-sm font-bold text-amber-950 mb-2.5">Ethical Dilemmas (Informed Consent, Impaired Capacity &amp; Family Presence):</p>
+                            <ul class="space-y-2.5 text-sm leading-relaxed text-slate-800">
+                                <li>
+                                    <strong class="text-slate-950">Impaired Decision-Making Capacity &amp; Emergency Consent:</strong> Because the patient experienced an acute drop in consciousness (GCS 10/15) and expressive dysarthria, he lacked the capacity to provide informed consent for emergent diagnostic imaging (CT/CTA) or potential endovascular interventions. Balancing the ethical principle of autonomy against beneficence (acting immediately to save brain tissue) required relying on emergency implied consent protocols and swiftly contacting the patient's legal surrogate/next-of-kin.
+                                </li>
+                                <li>
+                                    <strong class="text-slate-950">Managing Family Presence &amp; Psychological Distress:</strong> Balancing the family's emotional need to remain at the bedside during a sudden neurological decline with the clinical team's need for rapid, unobstructed access to stabilize the patient and prepare for emergency transport, while providing honest, compassionate, and non-alarming updates.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Section 5 -->
+                        <section id="sec-5">
+                            <h3 class="text-lg font-bold text-blue-950 bg-slate-100 px-3 py-1.5 rounded-lg border-l-4 border-blue-700 mb-3">
+                                5. Application of a Reflection Framework (Gibbs' Structured Clinical Reflection)
+                            </h3>
+
+                            <div class="space-y-3.5 text-sm sm:text-[15px] leading-relaxed text-slate-800">
+                                <div>
+                                    <strong class="text-slate-950">Description of the Event:</strong> Caring for a post-craniectomy stroke patient who suddenly deteriorated neurologically required rapid coordination between bedside nursing stabilization, emergency neuroimaging, and precise medication administration.
+                                </div>
+
+                                <div>
+                                    <strong class="text-emerald-900">Analysis — What Went Well and Why:</strong>
+                                    <ul class="list-disc pl-5 mt-1 space-y-1.5">
+                                        <li>Frequent, systematic neurological checks (GCS, pupillary reactivity, motor strength) enabled early detection of deterioration before respiratory compromise developed.</li>
+                                        <li>Immediate non-pharmacological neuro-protective positioning (30° HOB elevation and midline neck alignment) and thorough pre-medication safety checks (allergy verification, dysphagia awareness, fever control) directly supported patient safety.</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <strong class="text-amber-900">Analysis — What Could Have Been Improved:</strong>
+                                    <ul class="list-disc pl-5 mt-1 space-y-1.5">
+                                        <li>During the acute spike in blood pressure, there was a brief delay in preparing the vasoactive infusion pump while awaiting imaging confirmation, increasing cognitive load and stress during urgent transport.</li>
+                                        <li>Swallowing assessment documentation for oral medications could have been verified earlier in the shift prior to scheduled medication times.</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <strong class="text-blue-950">Future Action Plan &amp; Skill Development:</strong>
+                                    <ul class="list-disc pl-5 mt-1 space-y-1.5">
+                                        <li><strong class="text-slate-900">What I will do differently:</strong> Proactively prepare emergency vasoactive infusions and airway/suction equipment at the bedside of high-risk post-craniectomy patients at the start of every shift.</li>
+                                        <li><strong class="text-slate-900">Skills &amp; knowledge to strengthen:</strong> Enhance proficiency in calculating Cerebral Perfusion Pressure (CPP = MAP − ICP), interpreting early Cushing's triad trends, and performing standardized bedside dysphagia screens.</li>
+                                        <li><strong class="text-slate-900">Helpful training/simulation:</strong> Participating in high-fidelity neuro-emergency simulations focusing on post-craniotomy neurological decline and rapid SBAR escalation.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="mt-8 pt-3 border-t border-slate-200 flex justify-between items-center text-[11px] text-slate-400">
+                        <span>AMER ALSHARIF • Reflective Practice Case Study</span>
+                        <span>Page 3 of 5</span>
+                    </div>
+                </article>
+
+                <!-- ==================== PAGE 4 ==================== -->
+                <article id="page-4" class="a4-sheet rounded-xl p-6 sm:p-12 md:p-14 font-doc" data-page="4">
+                    <div class="watermark-overlay" aria-hidden="true">
+                        <div class="watermark-row">AMER ALSHARIF • PROTECTED • AMER ALSHARIF • PROTECTED</div>
+                        <div class="watermark-row">PROTECTED • AMER ALSHARIF • PROTECTED • AMER ALSHARIF</div>
+                        <div class="watermark-row">AMER ALSHARIF • PROTECTED • AMER ALSHARIF • PROTECTED</div>
+                        <div class="watermark-row">PROTECTED • AMER ALSHARIF • PROTECTED • AMER ALSHARIF</div>
+                    </div>
+
+                    <div class="content-shield">
+                        <!-- Continuation of Section 5 -->
+                        <div class="mb-7 bg-blue-50/70 border border-blue-200 rounded-xl p-4 text-sm sm:text-[15px] leading-relaxed text-slate-800">
+                            <p class="font-bold text-blue-950 mb-1.5">How This Experience Will Change My Future Practice:</p>
+                            <p>
+                                This experience has shifted my clinical mindset from reactive task execution to proactive critical anticipation. In my future emergency and critical care nursing practice, I will treat subtle neurological changes—such as a 2-to-3-point GCS decline or early widening pulse pressure—as immediate triggers for rapid escalation rather than isolated findings. Furthermore, I will integrate early family engagement and surrogate decision-maker verification at admission so that ethical consent processes and compassionate family support remain seamless during sudden, life-threatening deteriorations.
+                            </p>
+                        </div>
+
+                        <!-- Section 6 -->
+                        <section id="sec-6">
+                            <h3 class="text-lg font-bold text-blue-950 bg-slate-100 px-3 py-1.5 rounded-lg border-l-4 border-blue-700 mb-3">
+                                6. Integration of Evidence-Based Practice (EBP)
+                            </h3>
+
+                            <div class="space-y-3.5 text-sm sm:text-[15px] leading-relaxed text-slate-800">
+                                <div>
+                                    <strong class="text-slate-950">American Heart Association / American Stroke Association (AHA/ASA) Guidelines:</strong> Confirm that recent intracranial surgery within 3 months is an absolute contraindication to intravenous fibrinolysis (Alteplase/Tenecteplase), making blood pressure control, normothermia, normoglycemia, and endovascular evaluation the cornerstones of acute ischemic stroke care.
+                                </div>
+
+                                <div>
+                                    <strong class="text-slate-950">Brain Trauma &amp; Neurocritical Care Standards:</strong> Maintaining HOB elevation at 30 degrees with neutral head alignment promotes jugular venous outflow and lowers intracranial pressure (ICP) without impairing cerebral blood flow. Additionally, aggressive fever control (using IV Paracetamol to keep temperature &lt;37.5°C) reduces cerebral metabolic oxygen demand (CMRO₂) and limits secondary neuronal injury.
+                                </div>
+
+                                <div>
+                                    <strong class="text-slate-950">Hospital Medication &amp; Stroke Protocols:</strong> Performing formal dysphagia screening prior to administering oral medications (such as Azithromycin) prevents aspiration pneumonia—a leading cause of mortality in acute stroke patients—while verifying allergy history and organ function prior to IV Cephalosporins (Ceftazidime) upholds the "Rights" of safe medication administration.
+                                </div>
+
+                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                    <p class="font-bold text-slate-950 mb-2">Critical Care Nursing Textbooks &amp; Peer-Reviewed Research:</p>
+                                    <ul class="list-disc pl-5 space-y-2 text-sm text-slate-700">
+                                        <li>
+                                            <strong class="text-slate-900">Urden, L. D., Stacy, K. M., &amp; Lough, M. E. (Critical Care Nursing: Diagnosis and Management):</strong> Establishes that post-craniotomy patients require serial neurological checks (GCS, pupillary reactivity, and motor strength) to detect early signs of cerebral edema, vasospasm, or Cushing's triad, and emphasizes strict maintenance of Cerebral Perfusion Pressure (CPP = MAP − ICP) to salvage the ischemic penumbra without inducing surgical site hemorrhage.
+                                        </li>
+                                        <li>
+                                            <strong class="text-slate-900">Morton, P. G., &amp; Fontaine, D. K. (Critical Care Nursing: A Holistic Approach):</strong> Highlights the physiological link between hyperthermia, hyperglycemia, and accelerated neuronal apoptosis following ischemic brain injury, supporting scheduled antipyretic therapy (Paracetamol) and tight glycemic monitoring.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="mt-8 pt-3 border-t border-slate-200 flex justify-between items-center text-[11px] text-slate-400">
+                        <span>AMER ALSHARIF • Reflective Practice Case Study</span>
+                        <span>Page 4 of 5</span>
+                    </div>
+                </article>
+
+                <!-- ==================== PAGE 5 ==================== -->
+                <article id="page-5" class="a4-sheet rounded-xl p-6 sm:p-12 md:p-14 font-doc" data-page="5">
+                    <div class="watermark-overlay" aria-hidden="true">
+                        <div class="watermark-row">AMER ALSHARIF • PROTECTED • AMER ALSHARIF • PROTECTED</div>
+                        <div class="watermark-row">PROTECTED • AMER ALSHARIF • PROTECTED • AMER ALSHARIF</div>
+                        <div class="watermark-row">AMER ALSHARIF • PROTECTED • AMER ALSHARIF • PROTECTED</div>
+                        <div class="watermark-row">PROTECTED • AMER ALSHARIF • PROTECTED • AMER ALSHARIF</div>
+                    </div>
+
+                    <div class="content-shield">
+                        <!-- Section 7 -->
+                        <section id="sec-7" class="mb-10">
+                            <h3 class="text-lg font-bold text-blue-950 bg-slate-100 px-3 py-1.5 rounded-lg border-l-4 border-blue-700 mb-4">
+                                7. Conclusion
+                            </h3>
+                            <p class="text-sm sm:text-[15px] leading-relaxed text-slate-800">
+                                This clinical encounter demonstrated that in emergency and critical care nursing, vigilance during routine assessments is the primary defense against catastrophic neurological decline. Combining structured primary surveys (ABCDE), rapid multidisciplinary communication, and evidence-based neuro-protective interventions directly bridges theoretical knowledge with life-saving bedside care. Moving forward into emergency and trauma practice, I will apply a proactive approach—anticipating hemodynamic and airway complications early, adhering strictly to evidence-based medication and stroke protocols, and utilizing structured reflection to continuously refine my clinical judgment under pressure.
+                            </p>
+                        </section>
+
+                        <!-- Official Verification Stamp -->
+                        <div class="mt-12 p-5 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Authenticated Clinical Submission</p>
+                                <p class="text-base font-extrabold text-slate-900 mt-0.5">AMER ALSHARIF — Group 23</p>
+                                <p class="text-xs text-slate-600 mt-0.5">Critical Care Nursing • Reflective Practice Case Study Activity</p>
+                            </div>
+                            <div class="px-4 py-2 rounded-xl border-2 border-blue-800 text-blue-900 font-extrabold text-xs uppercase tracking-widest transform -rotate-2 bg-white shadow-sm">
+                                Verified &amp; Protected
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-16 pt-3 border-t border-slate-200 flex justify-between items-center text-[11px] text-slate-400">
+                        <span>AMER ALSHARIF • Reflective Practice Case Study</span>
+                        <span>Page 5 of 5</span>
+                    </div>
+                </article>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ==================== FUNNY "يا حراااااااااامي" ALERT MODAL ==================== -->
+    <div id="haramiModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 siren-backdrop backdrop-blur-sm">
+        <div class="modal-bounce bg-slate-900 border-4 border-rose-500 rounded-3xl max-w-md w-full p-6 sm:p-8 text-center shadow-2xl relative overflow-hidden">
+            <!-- Top Siren Bar -->
+            <div class="flex justify-center items-center gap-3 text-4xl sm:text-5xl mb-3">
+                <span class="wobble-icon">🚨</span>
+                <span>🕵️‍♂️</span>
+                <span class="wobble-icon">🚓</span>
+            </div>
+
+            <!-- Main Arabic Funny Catchphrase -->
+            <h2 class="font-arabic text-3xl sm:text-4xl font-black text-rose-500 tracking-wide drop-shadow mb-2" dir="rtl">
+                يا حراااااااااامي! 😂
+            </h2>
+
+            <!-- Humorous Warning Subtitle -->
+            <p class="font-arabic text-base sm:text-lg font-bold text-white mb-2" dir="rtl">
+                تم القبض عليك متلبساً! 🚔
+            </p>
+            <p class="font-arabic text-sm text-slate-300 leading-relaxed mb-4" dir="rtl">
+                محاولة نسخ أو قص أو سرقة المحتوى ممنوعة منعاً باتاً!<br>
+                جميع الحقوق محفوظة لـ <span class="text-amber-400 font-bold">AMER ALSHARIF</span>
+            </p>
+
+            <!-- Action Triggered Badge -->
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-300 mb-5">
+                <span>Detected Action:</span>
+                <span id="detectedActionLabel" class="font-bold text-rose-400">Copy Attempt</span>
+                <span>•</span>
+                <span>Total Attempts: <strong id="modalAttemptCount" class="text-amber-400">1</strong></span>
+            </div>
+
+            <!-- Dismiss Button -->
+            <button id="closeModalBtn" class="w-full py-3 px-6 rounded-2xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-arabic font-bold text-base shadow-lg transition transform active:scale-95 cursor-pointer">
+                توبة! مش هنسخ تاني ✋😅
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== STATE & ELEMENTS ====================
+        let theftAttempts = 0;
+        let soundEnabled = true;
+        let currentZoom = 100;
+        let lastTriggerTime = 0;
+
+        const haramiModal = document.getElementById('haramiModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const theftCountEl = document.getElementById('theftCount');
+        const modalAttemptCountEl = document.getElementById('modalAttemptCount');
+        const detectedActionLabel = document.getElementById('detectedActionLabel');
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        const soundIcon = document.getElementById('soundIcon');
+        const soundText = document.getElementById('soundText');
+
+        // ==================== WEB AUDIO API SIREN EFFECT ====================
+        function playFunnySiren() {
+            if (!soundEnabled) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                const ctx = new AudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'sawtooth';
+                const now = ctx.currentTime;
+
+                // Wee-Woo Police Siren Pitch Sweep
+                osc.frequency.setValueAtTime(580, now);
+                osc.frequency.linearRampToValueAtTime(920, now + 0.18);
+                osc.frequency.linearRampToValueAtTime(580, now + 0.36);
+                osc.frequency.linearRampToValueAtTime(920, now + 0.54);
+
+                gain.gain.setValueAtTime(0.14, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.6);
+            } catch (err) {
+                // Ignore audio context restrictions if user hasn't interacted yet
+            }
+        }
+
+        // ==================== TRIGGER "يا حراااااااااامي" POPUP ====================
+        function triggerHaramiAlert(actionName = 'Unauthorized Action') {
+            const now = Date.now();
+            // Prevent rapid duplicate triggers within 350ms
+            if (now - lastTriggerTime < 350) return;
+            lastTriggerTime = now;
+
+            // Clear any accidental selection immediately
+            if (window.getSelection) {
+                try { window.getSelection().removeAllRanges(); } catch (e) {}
+            }
+
+            theftAttempts++;
+            theftCountEl.textContent = theftAttempts;
+            modalAttemptCountEl.textContent = theftAttempts;
+            detectedActionLabel.textContent = actionName;
+
+            haramiModal.classList.remove('hidden');
+            haramiModal.classList.add('flex');
+
+            playFunnySiren();
+        }
+
+        function closeHaramiModal() {
+            haramiModal.classList.add('hidden');
+            haramiModal.classList.remove('flex');
+        }
+
+        closeModalBtn.addEventListener('click', closeHaramiModal);
+        haramiModal.addEventListener('click', (e) => {
+            if (e.target === haramiModal) closeHaramiModal();
+        });
+
+        // Toggle Siren Sound
+        soundToggleBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundIcon.textContent = soundEnabled ? '🔊' : '🔇';
+            soundText.textContent = soundEnabled ? 'Siren On' : 'Muted';
+        });
+
+        // ==================== COMPREHENSIVE ANTI-COPY / ANTI-CUT PROTECTIONS ====================
+
+        // 1. Intercept Copy, Cut, Paste Events
+        document.addEventListener('copy', (e) => {
+            e.preventDefault();
+            if (e.clipboardData) {
+                e.clipboardData.setData('text/plain', 'يا حراااااااااامي! حقوق الملكية محفوظة لـ AMER ALSHARIF');
+            }
+            triggerHaramiAlert('Copy (Ctrl+C)');
+        });
+
+        document.addEventListener('cut', (e) => {
+            e.preventDefault();
+            triggerHaramiAlert('Cut (Ctrl+X)');
+        });
+
+        document.addEventListener('paste', (e) => {
+            e.preventDefault();
+            triggerHaramiAlert('Paste Blocked');
+        });
+
+        // 2. Intercept Right-Click Context Menu
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            triggerHaramiAlert('Right-Click Menu');
+        });
+
+        // 3. Intercept Text Selection & Dragging
+        document.addEventListener('selectstart', (e) => {
+            e.preventDefault();
+            triggerHaramiAlert('Text Selection');
+        });
+
+        document.addEventListener('dragstart', (e) => {
+            e.preventDefault();
+            triggerHaramiAlert('Drag & Drop');
+        });
+
+        // 4. Intercept Keyboard Shortcuts (Ctrl/Cmd + C, X, A, S, P, U, DevTools)
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
+            if (isCtrlOrCmd && key === 'c') {
+                e.preventDefault();
+                triggerHaramiAlert('Copy Shortcut (Ctrl+C)');
+            } else if (isCtrlOrCmd && key === 'x') {
+                e.preventDefault();
+                triggerHaramiAlert('Cut Shortcut (Ctrl+X)');
+            } else if (isCtrlOrCmd && key === 'a') {
+                e.preventDefault();
+                triggerHaramiAlert('Select All (Ctrl+A)');
+            } else if (isCtrlOrCmd && key === 's') {
+                e.preventDefault();
+                triggerHaramiAlert('Save Page (Ctrl+S)');
+            } else if (isCtrlOrCmd && key === 'p') {
+                e.preventDefault();
+                triggerHaramiAlert('Print Page (Ctrl+P)');
+            } else if (isCtrlOrCmd && key === 'u') {
+                e.preventDefault();
+                triggerHaramiAlert('View Source (Ctrl+U)');
+            } else if (
+                e.key === 'F12' ||
+                (isCtrlOrCmd && e.shiftKey && (key === 'i' || key === 'j' || key === 'c'))
+            ) {
+                e.preventDefault();
+                triggerHaramiAlert('Developer Tools');
+            } else if (e.key === 'Escape') {
+                closeHaramiModal();
+            }
+        });
+
+        // 5. Block BeforePrint Event
+        window.addEventListener('beforeprint', (e) => {
+            triggerHaramiAlert('Print Attempt');
+        });
+
+        // ==================== VIEWER NAVIGATION & ZOOM CONTROLS ====================
+        const zoomContainer = document.getElementById('zoomContainer');
+        const zoomLabel = document.getElementById('zoomLabel');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const sidebar = document.getElementById('sidebar');
+        const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+        const pageIndicator = document.getElementById('pageIndicator');
+
+        function updateZoom(newZoom) {
+            currentZoom = Math.min(130, Math.max(70, newZoom));
+            zoomLabel.textContent = `${currentZoom}%`;
+            zoomContainer.style.transform = `scale(${currentZoom / 100})`;
+        }
+
+        zoomInBtn.addEventListener('click', () => updateZoom(currentZoom + 10));
+        zoomOutBtn.addEventListener('click', () => updateZoom(currentZoom - 10));
+
+        toggleSidebarBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (window.innerWidth < 1024) {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            }
+        }
+
+        function scrollToPage(pageNum) {
+            const el = document.getElementById(`page-${pageNum}`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (window.innerWidth < 1024) {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            }
+        }
+
+        // Update active page indicator on scroll
+        const pages = document.querySelectorAll('.a4-sheet');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const p = entry.target.getAttribute('data-page');
+                    pageIndicator.textContent = `Page ${p} / 5`;
+                }
+            });
+        }, { threshold: 0.4 });
+
+        pages.forEach(page => observer.observe(page));
+    </script>
+</body>
+</html>
